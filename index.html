@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game - Lab 3° Anno</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        h1 { margin-bottom: 10px; }
+        
+        #gameCanvas {
+            background-color: #000;
+            border: 3px solid #ecf0f1;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        #scoreBoard {
+            font-size: 24px;
+            margin-top: 10px;
+        }
+
+        .controls {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🐍 Snake Galilei Lab</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="scoreBoard">Punteggio: 0</div>
+    <div class="controls">Usa le frecce direzionali per muoverti</div>
+
+    <script>
+        // --- CONFIGURAZIONE ---
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        // Dimensione di ogni quadratino (tile)
+        const box = 20; 
+        
+        // Variabili di stato
+        let score = 0;
+        let snake = [];
+        
+        // Posizione iniziale del serpente (testa)
+        snake[0] = { x: 10 * box, y: 10 * box };
+
+        // Posizione del cibo
+        let food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+
+        // Direzione corrente
+        let d;
+
+        // Ascoltatore eventi tastiera
+        document.addEventListener("keydown", direction);
+
+        function direction(event) {
+            let key = event.keyCode;
+            // 37: Left, 38: Up, 39: Right, 40: Down
+            // Impediamo al serpente di tornare indietro su se stesso
+            if( key == 37 && d != "RIGHT") d = "LEFT";
+            else if(key == 38 && d != "DOWN") d = "UP";
+            else if(key == 39 && d != "LEFT") d = "RIGHT";
+            else if(key == 40 && d != "UP") d = "DOWN";
+        }
+
+        // --- FUNZIONE DI DISEGNO PRINCIPALE (Game Loop) ---
+        function draw() {
+            // 1. Pulisci il canvas (ridisegna lo sfondo nero)
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Disegna il Serpente
+            for( let i = 0; i < snake.length; i++){
+                // Testa verde, corpo bianco
+                ctx.fillStyle = ( i == 0 ) ? "#2ecc71" : "white";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+
+                // Bordo del quadratino per vederlo meglio
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            // 3. Disegna il Cibo
+            ctx.fillStyle = "#e74c3c"; // Rosso
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // 4. Calcola la nuova posizione della testa
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if( d == "LEFT") snakeX -= box;
+            if( d == "UP") snakeY -= box;
+            if( d == "RIGHT") snakeX += box;
+            if( d == "DOWN") snakeY += box;
+
+            // 5. Gestione Mangiare il Cibo
+            if(snakeX == food.x && snakeY == food.y){
+                score++;
+                document.getElementById("scoreBoard").innerText = "Punteggio: " + score;
+                // Genera nuovo cibo
+                food = {
+                    x: Math.floor(Math.random() * 20) * box,
+                    y: Math.floor(Math.random() * 20) * box
+                }
+                // NON rimuoviamo la coda -> il serpente cresce
+            } else {
+                // Rimuovi la coda (movimento standard)
+                snake.pop();
+            }
+
+            // 6. Crea la nuova testa
+            let newHead = {
+                x : snakeX,
+                y : snakeY
+            }
+
+            // 7. Controllo Collisioni (Game Over)
+            // Controlla muri O controlla se tocca se stesso
+            if(snakeX < 0 || snakeX >= canvas.width || 
+               snakeY < 0 || snakeY >= canvas.height || 
+               collision(newHead, snake)){
+                clearInterval(game);
+                alert("Game Over! Punteggio finale: " + score + "\nPremi F5 per riprovare.");
+                return;
+            }
+
+            // Aggiungi la nuova testa all'array
+            snake.unshift(newHead);
+        }
+
+        // Funzione ausiliaria per collisione con il corpo
+        function collision(head, array){
+            for(let i = 0; i < array.length; i++){
+                if(head.x == array[i].x && head.y == array[i].y){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Avvia il gioco: chiama la funzione draw ogni 100ms
+        let game = setInterval(draw, 100);
+
+    </script>
+</body>
+</html>
